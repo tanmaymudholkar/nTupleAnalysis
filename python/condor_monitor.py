@@ -13,6 +13,17 @@ class condor_job:
     
     def check(self):
         if self.done: return self.line
+
+        command = 'condor_tail -maxbytes 256 -name {n} {id}'.format(n=self.schedd, id=self.ID)
+        # args = ['/usr/local/bin/condor_tail','-maxbytes 256', '-name %s'%self.schedd, self.ID]
+        res = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True, executable="/bin/bash")
+        res.wait()
+        if res.returncode:
+            self.done = True
+            line = '%s %10s >> %s'%(self.schedd, self.ID, 'FINISHED')
+            return line
+        tail = res.stdout.read()
+
         # args = ['/usr/local/bin/condor_tail','-maxbytes 256', '-name %s'%self.schedd, self.ID]
         # res = subprocess.Popen(args, stdout=subprocess.PIPE)
         # res.wait()
@@ -22,12 +33,12 @@ class condor_job:
         #     return line
         # tail = res.stdout.read()
 
-        res = os.popen('condor_tail -maxbytes 256 -name %s %s'%(self.schedd, self.ID))
-        tail = res.read()
-        if res.close(): 
-            self.done=True
-            self.line = '%s %10s >> %s'%(self.schedd, self.ID, 'FINISHED')
-            return self.line
+        # res = os.popen('condor_tail -maxbytes 256 -name %s %s'%(self.schedd, self.ID))
+        # tail = res.read()
+        # if res.close():
+        #     self.done=True
+        #     self.line = '%s %10s >> %s'%(self.schedd, self.ID, 'FINISHED')
+        #     return self.line
 
         split = re.split('\n\r',tail)
         line = tail.encode('string-escape')
